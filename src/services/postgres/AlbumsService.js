@@ -8,9 +8,7 @@ class AlbumsService {
     this._pool = new Pool();
   }
 
-  async addAlbum({
-    name, year,
-  }) {
+  async addAlbum({ name, year }) {
     const id = `album-${nanoid(16)}`;
 
     const query = {

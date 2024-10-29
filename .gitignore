@@ -1,6 +1,6 @@
 .idea
 node_modules
 .env
-.env.prod
+.prod.env
 package-lock.json
 open-music-api-webserver.pem
