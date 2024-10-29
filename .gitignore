@@ -1,0 +1,6 @@
+.idea
+node_modules
+.env
+.env.prod
+package-lock.json
+open-music-api-webserver.pem
