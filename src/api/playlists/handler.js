@@ -1,6 +1,4 @@
 const autoBind = require('auto-bind');
-const NotFoundError = require('../../exceptions/NotFoundError');
-const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsHandler {
   constructor(service, validator) {
@@ -114,39 +112,6 @@ class PlaylistsHandler {
 
     response.code(200);
     return response;
-  }
-
-  async verifyPlaylistOwner(playlistId, userId) {
-    const query = {
-      text: 'SELECT * FROM playlists WHERE id = $1',
-      values: [playlistId],
-    };
-    const result = await this._pool.query(query);
-
-    if (!result.rows.length) {
-      throw new NotFoundError('Playlist not found');
-    }
-    const playlist = result.rows[0];
-    if (playlist.owner !== userId) {
-      throw new AuthorizationError(
-        "You don't have the right to access this resource",
-      );
-    }
-  }
-
-  async verifyPlaylistAccess(playlistId, userId) {
-    try {
-      await this.verifyPlaylistOwner(playlistId, userId);
-    } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
-      try {
-        await this._collaborationService.verifyCollaborator(playlistId, userId);
-      } catch {
-        throw error;
-      }
-    }
   }
 }
 

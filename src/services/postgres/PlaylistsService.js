@@ -101,10 +101,9 @@ class PlaylistsService {
     const id = `playlist-songs-${nanoid(16)}`;
 
     const query = {
-      text: 'INSERT INTO playlist_songs VALUES($1, $2, $3)',
+      text: 'INSERT INTO playlist_songs (id, playlist_id, song_id) VALUES ($1, $2, $3)',
       values: [id, playlistId, songId],
     };
-    console.log(query);
 
     await this._pool.query(query);
   }
@@ -163,78 +162,64 @@ class PlaylistsService {
   }
 
   async addActivity(playlistId, songId, userId) {
-    const querySong = {
+    const songQuery = {
       text: 'SELECT title FROM songs WHERE id = $1',
       values: [songId],
     };
 
-    const resultSong = await this._pool.query(querySong);
-    const songTitle = resultSong.rows[0].title;
+    const song = await this._pool.query(songQuery);
+    const { title } = song.rows[0];
 
-    const queryUser = {
+    const userQuery = {
       text: 'SELECT username FROM users WHERE id = $1',
       values: [userId],
     };
 
-    const resultUser = await this._pool.query(queryUser);
-    const { username } = resultUser.rows[0];
+    const user = await this._pool.query(userQuery);
+    const { username } = user.rows[0];
 
-    const idActivities = `activity-${nanoid(16)}`;
-    const timeActivity = new Date().toISOString();
+    const id = `playlist-activity-${nanoid(16)}`;
+    const time = new Date().toISOString();
 
-    const queryActivities = {
-      text: 'INSERT INTO playlist_activities (id, playlist_id, song_id, user_id, action, time) VALUES($1, $2, $3, $4, $5, $6)',
-      values: [
-        idActivities,
-        playlistId,
-        songTitle,
-        username,
-        'add',
-        timeActivity,
-      ],
+    const query = {
+      text: 'INSERT INTO playlist_song_activities VALUES($1, $2, $3, $4, $5, $6)',
+      values: [id, playlistId, title, username, 'add', time],
     };
 
-    await this._pool.query(queryActivities);
+    await this._pool.query(query);
   }
 
   async deleteActivity(playlistId, songId, userId) {
-    const querySong = {
+    const songQuery = {
       text: 'SELECT title FROM songs WHERE id = $1',
       values: [songId],
     };
 
-    const resultSong = await this._pool.query(querySong);
-    const songTitle = resultSong.rows[0].title;
+    const song = await this._pool.query(songQuery);
+    const { title } = song.rows[0];
 
-    const queryUser = {
+    const userQuery = {
       text: 'SELECT username FROM users WHERE id = $1',
       values: [userId],
     };
 
-    const resultUser = await this._pool.query(queryUser);
-    const { username } = resultUser.rows[0];
+    const user = await this._pool.query(userQuery);
+    const { username } = user.rows[0];
 
-    const idActivities = `activity-${nanoid(16)}`;
-    const timeActivity = new Date().toISOString();
+    const id = `playlist-activity-${nanoid(16)}`;
+    const time = new Date().toISOString();
 
-    const queryActivities = {
-      text: 'INSERT INTO playlist_activities (id, playlist_id, song_id, user_id, action, time) VALUES ($1, $2, $3, $4, $5, $6)',
-      values: [
-        idActivities,
-        playlistId,
-        songTitle,
-        username,
-        'delete',
-        timeActivity,
-      ],
+    const query = {
+      text: 'INSERT INTO playlist_song_activities VALUES($1, $2, $3, $4, $5, $6)',
+      values: [id, playlistId, title, username, 'delete', time],
     };
 
-    await this._pool.query(queryActivities);
+    await this._pool.query(query);
   }
 
   async getPlaylistActivities(playlistId) {
     const query = {
-      text: 'SELECT * FROM playlist_activities WHERE playlist_id = $1',
+      text: 'SELECT * FROM playlist_song_activities WHERE playlist_id = $1',
       values: [playlistId],
     };
 
@@ -244,7 +229,7 @@ class PlaylistsService {
       throw new NotFoundError('Tidak ada aktivitas');
     }
 
-    const resultMap = result.rows.map((row) => ({
+    const showResult = result.rows.map((row) => ({
       username: row.user_id,
       title: row.song_id,
       action: row.action,
@@ -253,7 +238,7 @@ class PlaylistsService {
 
     return {
       playlistId,
-      activities: resultMap,
+      activities: showResult,
     };
   }
 }

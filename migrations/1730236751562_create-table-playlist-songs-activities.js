@@ -21,7 +21,7 @@ exports.up = (pgm) => {
       notNull: true,
     },
     time: {
-      type: 'TIMESTAMPTZ',
+      type: 'VARCHAR(50)',
       notNull: true,
     },
   });
