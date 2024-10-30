@@ -104,6 +104,7 @@ class PlaylistsService {
       text: 'INSERT INTO playlist_songs VALUES($1, $2, $3)',
       values: [id, playlistId, songId],
     };
+    console.log(query);
 
     await this._pool.query(query);
   }
