@@ -8,7 +8,7 @@
     "start:dev": "nodemon ./src/server.js",
     "lint": "eslint ./src",
     "migrate": "node-pg-migrate",
-    "newman": "newman run ./postman/Open-Music-API-V2-Test.postman_collection.json --environment ./postman/Open-Music-API-Test.postman_environment.json"
+    "newman": "newman run ./postman/Open-Music-API-V3-Test.postman_collection.json --environment ./postman/Open-Music-API-Test.postman_environment.json"
   },
   "keywords": [],
   "author": "",
