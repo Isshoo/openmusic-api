@@ -5,9 +5,10 @@ const NotFoundError = require('../../exceptions/NotFoundError');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
 
 class PlaylistsService {
-  constructor(collaborationsService) {
+  constructor(collaborationsService, cacheService) {
     this._pool = new Pool();
     this._collaborationsService = collaborationsService;
+    this._cacheService = cacheService;
   }
 
   async addPlaylist({ name, owner }) {
@@ -24,21 +25,34 @@ class PlaylistsService {
       throw new InvariantError('Playlist gagal ditambahkan');
     }
 
+    await this._cacheService.delete(`playlists:${owner}`);
+
     return addResult.rows[0].id;
   }
 
   async getPlaylists(owner) {
-    const query = {
-      text: `SELECT playlists.id, playlists.name, users.username AS username FROM playlists 
+    try {
+      // mendapatkan playlist dari cache
+      const result = await this._cacheService.get(`playlists:${owner}`);
+      return JSON.parse(result);
+    } catch (error) {
+      // bila gagal, diteruskan dengan mendapatkan playlist dari database
+      const query = {
+        text: `SELECT playlists.id, playlists.name, users.username AS username FROM playlists 
       LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id 
       LEFT JOIN users ON users.id = playlists.owner 
       WHERE playlists.owner = $1 OR collaborations.user_id = $1 
       GROUP BY (playlists.id, users.username)`,
-      values: [owner],
-    };
+        values: [owner],
+      };
 
-    const result = await this._pool.query(query);
-    return result.rows;
+      const result = await this._pool.query(query);
+
+      // catatan akan disimpan pada cache sebelum fungsi getPlaylists dikembalikan
+      await this._cacheService.set(`playlists:${owner}`, JSON.stringify(result));
+
+      return result.rows;
+    }
   }
 
   async deletePlaylistById(id) {
@@ -52,6 +66,9 @@ class PlaylistsService {
     if (!result.rows.length) {
       throw new NotFoundError('Playlist gagal dihapus. Id tidak ditemukan');
     }
+
+    const { owner } = result.rows[0];
+    await this._cacheService.delete(`playlists:${owner}`);
   }
 
   async verifyPlaylistOwner(id, owner) {
