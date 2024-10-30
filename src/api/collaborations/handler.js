@@ -1,77 +1,49 @@
 const autoBind = require('auto-bind');
 
-class SongsHandler {
-  constructor(service, validator) {
-    this._service = service;
+class CollaborationsHandler {
+  constructor(collaborationsService, playlistsService, validator) {
+    this._collaborationsService = collaborationsService;
+    this._playlistsService = playlistsService;
     this._validator = validator;
 
     autoBind(this);
   }
 
-  async postSongHandler(request, h) {
-    this._validator.validateSongPayload(request.payload);
-    const {
-      title = 'untitled', year, genre, performer, duration, albumId,
-    } = request.payload;
+  async postCollaborationHandler(request, h) {
+    this._validator.validateCollaborationPayload(request.payload);
 
-    const songId = await this._service.addSong({
-      title, year, genre, performer, duration, albumId,
-    });
+    const { id: credentialId } = request.auth.credentials;
+    const { playlistId, userId } = request.payload;
+
+    await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
+    const collaborationId = await this._collaborationsService.addCollaboration(playlistId, userId);
 
     const response = h.response({
       status: 'success',
-      message: 'Lagu berhasil ditambahkan',
+      message: 'Kolaborasi berhasil ditambahkan',
       data: {
-        songId,
+        collaborationId,
       },
     });
+
     response.code(201);
     return response;
   }
 
-  async getSongsHandler(request) {
-    const { title, performer } = request.query;
-    const songs = await this._service.getSongs(title, performer);
-    return {
-      status: 'success',
-      data: {
-        songs,
-      },
-    };
-  }
+  async deleteCollaborationHandler(request) {
+    this._validator.validateCollaborationPayload(request.payload);
 
-  async getSongByIdHandler(request) {
-    const { id } = request.params;
-    const song = await this._service.getSongById(id);
-    return {
-      status: 'success',
-      data: {
-        song,
-      },
-    };
-  }
+    const { id: credentialId } = request.auth.credentials;
+    const { playlistId, userId } = request.payload;
 
-  async putSongByIdHandler(request) {
-    this._validator.validateSongPayload(request.payload);
-    const { id } = request.params;
-
-    await this._service.editSongById(id, request.payload);
+    await this._playlistsService.verifyPlaylistOwner(playlistId, credentialId);
+    await this._collaborationsService.deleteCollaboration(playlistId, userId);
 
     return {
       status: 'success',
-      message: 'Lagu berhasil diperbarui',
-    };
-  }
-
-  async deleteSongByIdHandler(request) {
-    const { id } = request.params;
-    await this._service.deleteSongById(id);
-
-    return {
-      status: 'success',
-      message: 'Lagu berhasil dihapus',
+      message: 'Kolaborasi berhasil dihapus',
     };
   }
 }
 
-module.exports = SongsHandler;
+module.exports = CollaborationsHandler;
