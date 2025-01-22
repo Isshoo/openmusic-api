@@ -1,9 +1,10 @@
 const autoBind = require('auto-bind');
 
 class AlbumsHandler {
-  constructor(service, validator) {
+  constructor(service, storageService, validator) {
     this._service = service;
     this._validator = validator;
+    this._storageService = storageService;
 
     autoBind(this);
   }
@@ -55,6 +56,68 @@ class AlbumsHandler {
     return {
       status: 'success',
       message: 'Album berhasil dihapus',
+    };
+  }
+
+  async postAlbumCoverByIdHandler(request, h) {
+    const { id } = request.params;
+    const { cover: cover_url } = request.payload;
+    const owner = request.auth.credentials.id;
+    await this._service.verifyUmkmOwner(id, owner);
+
+    this._validator.validateImageHeaders(cover_url.hapi.headers);
+
+    const fileLocation = await this._storageService.writeFile(cover_url, cover_url.hapi);
+    const path = fileLocation;
+
+    await this._service.updateProductCover(id, { path });
+
+    const response = h.response({
+      status: 'success',
+      message: 'Cover Album berhasil diubah',
+    });
+    response.code(201);
+    return response;
+  }
+
+  async postAlbumLikesByIdHandler(req, h) {
+    const { id } = req.params;
+    const userId = req.auth.credentials.id;
+
+    await this._service.verifyUserLiked(id, userId);
+    await this._service.addLikesToAlbum(id, userId);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Anda menyukai album ini',
+    });
+    response.code(201);
+    return response;
+  }
+
+  async getAlbumLikesByIdHandler(req, h) {
+    const { id } = req.params;
+    const likes = await this._service.getAlbumLikes(id);
+
+    const response = h.response({
+      status: 'success',
+      data: {
+        likes,
+      },
+    });
+
+    return response;
+  }
+
+  async deleteAlbumLikesByIdHandler(req) {
+    const { id } = req.params;
+    const userId = req.auth.credentials.id;
+
+    await this._service.deleteLike(id, userId);
+
+    return {
+      status: 'success',
+      message: 'Berhasil membatalkan like',
     };
   }
 }

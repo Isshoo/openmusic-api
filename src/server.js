@@ -38,13 +38,13 @@ const CacheService = require('./services/redis/CacheService');
 
 const init = async () => {
   const cacheService = new CacheService();
+  const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
   const songsService = new SongsService();
-  const albumsService = new AlbumsService();
+  const albumsService = new AlbumsService(storageService, cacheService);
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
   const collaborationsService = new CollaborationsService(cacheService);
   const playlistsService = new PlaylistsService(collaborationsService, cacheService);
-  const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
 
   const server = Hapi.server({
     port: process.env.PORT,

@@ -1,4 +1,5 @@
 const autoBind = require('auto-bind');
+const config = require('../../utils/config');
 
 class UploadsHandler {
   constructor(service, validator) {
@@ -17,7 +18,7 @@ class UploadsHandler {
     const response = h.response({
       status: 'success',
       data: {
-        fileLocation: `http://${process.env.HOST}:${process.env.PORT}/upload/images/${filename}`,
+        fileLocation: `http://${config.app.host}:${config.app.port}/upload/images/${filename}`,
       },
     });
     response.code(201);
