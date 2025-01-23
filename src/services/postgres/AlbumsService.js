@@ -91,12 +91,12 @@ class AlbumsService {
     }
   }
 
-  async addLikesToAlbum(albumId, userId) {
+  async addLikesToAlbum(album_id, user_id) {
     const id = `like-${nanoid(16)}`;
 
     const query = {
       text: 'INSERT INTO user_album_likes VALUES($1, $2, $3) RETURNING id',
-      values: [id, userId, albumId],
+      values: [id, user_id, album_id],
     };
     const result = await this._pool.query(query);
 
@@ -104,7 +104,7 @@ class AlbumsService {
       throw new InvariantError('Gagal menyukai album');
     }
 
-    await this._cacheService.delete(`album-likes:${albumId}`);
+    await this._cacheService.delete(`album-likes:${album_id}`);
 
     return result.rows[0].id;
   }
@@ -112,7 +112,10 @@ class AlbumsService {
   async getAlbumLikes(albumId) {
     try {
       const result = await this._cacheService.get(`album-likes:${albumId}`);
-      return JSON.parse(result);
+      return {
+        cache: true,
+        likes: JSON.parse(result),
+      };
     } catch (error) {
       const query = {
         text: 'SELECT * FROM user_album_likes WHERE album_id = $1',
@@ -125,16 +128,16 @@ class AlbumsService {
         throw new NotFoundError('Album belum memiliki like');
       }
 
-      await this._cacheService.set(`album-likes:${albumId}`, JSON.stringify(result));
+      await this._cacheService.set(`album-likes:${albumId}`, JSON.stringify(result.rows.length));
 
-      return result.rows;
+      return { cache: false, likes: result.rows.length };
     }
   }
 
   async deleteLike(albumId, userId) {
     const query = {
-      text: 'DELETE FROM user_album_likes WHERE album_id = $1 AND user_id = $2',
-      values: [albumId, userId],
+      text: 'DELETE FROM user_album_likes WHERE user_id = $1 AND album_id = $2 RETURNING id',
+      values: [userId, albumId],
     };
 
     const result = await this._pool.query(query);
@@ -147,7 +150,16 @@ class AlbumsService {
   }
 
   async verifyUserLiked(albumId, userId) {
-    await this._albumService.getAlbumById(albumId);
+    // verify album exist
+    const albumQuery = {
+      text: 'SELECT * FROM albums WHERE id = $1',
+      values: [albumId],
+    };
+    const albumResult = await this._pool.query(albumQuery);
+
+    if (!albumResult.rows.length) {
+      throw new NotFoundError('Album tidak ditemukan');
+    }
 
     const query = {
       text: 'SELECT * FROM user_album_likes WHERE album_id = $1 AND user_id = $2',

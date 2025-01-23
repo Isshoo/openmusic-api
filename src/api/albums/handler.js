@@ -80,9 +80,9 @@ class AlbumsHandler {
     return response;
   }
 
-  async postAlbumLikesByIdHandler(req, h) {
-    const { id } = req.params;
-    const userId = req.auth.credentials.id;
+  async postAlbumLikesByIdHandler(request, h) {
+    const { id } = request.params;
+    const userId = request.auth.credentials.id;
 
     await this._service.verifyUserLiked(id, userId);
     await this._service.addLikesToAlbum(id, userId);
@@ -95,9 +95,9 @@ class AlbumsHandler {
     return response;
   }
 
-  async getAlbumLikesByIdHandler(req, h) {
-    const { id } = req.params;
-    const likes = await this._service.getAlbumLikes(id);
+  async getAlbumLikesByIdHandler(request, h) {
+    const { id } = request.params;
+    const { cache, likes } = await this._service.getAlbumLikes(id);
 
     const response = h.response({
       status: 'success',
@@ -106,12 +106,14 @@ class AlbumsHandler {
       },
     });
 
+    if (cache) response.header('X-Data-Source', 'cache');
+
     return response;
   }
 
-  async deleteAlbumLikesByIdHandler(req) {
-    const { id } = req.params;
-    const userId = req.auth.credentials.id;
+  async deleteAlbumLikesByIdHandler(request) {
+    const { id } = request.params;
+    const userId = request.auth.credentials.id;
 
     await this._service.deleteLike(id, userId);
 
