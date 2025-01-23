@@ -1,10 +1,12 @@
 const autoBind = require('auto-bind');
+const config = require('../../utils/config');
 
 class AlbumsHandler {
-  constructor(service, storageService, validator) {
+  constructor(service, storageService, validator, uploadValidator) {
     this._service = service;
     this._validator = validator;
     this._storageService = storageService;
+    this._uploadValidator = uploadValidator;
 
     autoBind(this);
   }
@@ -62,19 +64,17 @@ class AlbumsHandler {
   async postAlbumCoverByIdHandler(request, h) {
     const { id } = request.params;
     const { cover: cover_url } = request.payload;
-    const owner = request.auth.credentials.id;
-    await this._service.verifyUmkmOwner(id, owner);
 
-    this._validator.validateImageHeaders(cover_url.hapi.headers);
+    this._uploadValidator.validateImageHeaders(cover_url.hapi.headers);
 
-    const fileLocation = await this._storageService.writeFile(cover_url, cover_url.hapi);
-    const path = fileLocation;
+    const filename = await this._storageService.writeFile(cover_url, cover_url.hapi);
+    const path = `http://${config.app.host}:${config.app.port}/albums/covers/${filename}`;
 
-    await this._service.updateProductCover(id, { path });
+    await this._service.addAlbumCover(id, path);
 
     const response = h.response({
       status: 'success',
-      message: 'Cover Album berhasil diubah',
+      message: 'Sampul berhasil diunggah',
     });
     response.code(201);
     return response;

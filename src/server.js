@@ -12,7 +12,6 @@ const authentications = require('./api/authentications');
 const playlists = require('./api/playlists');
 const collaborations = require('./api/collaborations');
 const _exports = require('./api/exports');
-const uploads = require('./api/uploads');
 
 const SongsService = require('./services/postgres/SongsService');
 const AlbumsService = require('./services/postgres/AlbumsService');
@@ -90,6 +89,7 @@ const init = async () => {
         service: albumsService,
         storageService,
         validator: AlbumsValidator,
+        uploadValidator: UploadsValidator,
       },
     },
     {
@@ -136,13 +136,6 @@ const init = async () => {
         service: ProducerService,
         playlistsService,
         validator: ExportsValidator,
-      },
-    },
-    {
-      plugin: uploads,
-      options: {
-        service: storageService,
-        validator: UploadsValidator,
       },
     },
   ]);
