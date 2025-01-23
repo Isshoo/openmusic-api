@@ -10,12 +10,12 @@ class AlbumsService {
     this._cacheService = cacheService;
   }
 
-  async addAlbum({ name, year }) {
+  async addAlbum({ name, year, cover }) {
     const id = `album-${nanoid(16)}`;
 
     const query = {
-      text: 'INSERT INTO albums VALUES($1, $2, $3) RETURNING id',
-      values: [id, name, year],
+      text: 'INSERT INTO albums VALUES($1, $2, $3, $4) RETURNING id',
+      values: [id, name, year, cover],
     };
 
     const result = await this._pool.query(query);
