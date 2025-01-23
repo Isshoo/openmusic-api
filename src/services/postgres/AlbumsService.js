@@ -91,7 +91,7 @@ class AlbumsService {
     }
   }
 
-  async addLikesToAlbum(album_id, user_id) {
+  async likeAlbumById(album_id, user_id) {
     const id = `like-${nanoid(16)}`;
 
     const query = {
@@ -109,9 +109,9 @@ class AlbumsService {
     return result.rows[0].id;
   }
 
-  async getAlbumLikes(albumId) {
+  async getAlbumLikesById(album_id) {
     try {
-      const result = await this._cacheService.get(`album-likes:${albumId}`);
+      const result = await this._cacheService.get(`album-likes:${album_id}`);
       return {
         cache: true,
         likes: JSON.parse(result),
@@ -119,41 +119,41 @@ class AlbumsService {
     } catch (error) {
       const query = {
         text: 'SELECT * FROM user_album_likes WHERE album_id = $1',
-        values: [albumId],
+        values: [album_id],
       };
 
       const result = await this._pool.query(query);
 
       if (!result.rows.length) {
-        throw new NotFoundError('Album belum memiliki like');
+        throw new NotFoundError('Album belum mempunyai like');
       }
 
-      await this._cacheService.set(`album-likes:${albumId}`, JSON.stringify(result.rows.length));
+      await this._cacheService.set(`album-likes:${album_id}`, JSON.stringify(result.rows.length));
 
       return { cache: false, likes: result.rows.length };
     }
   }
 
-  async deleteLike(albumId, userId) {
+  async deleteLikeById(album_id, user_id) {
     const query = {
       text: 'DELETE FROM user_album_likes WHERE user_id = $1 AND album_id = $2 RETURNING id',
-      values: [userId, albumId],
+      values: [user_id, album_id],
     };
 
     const result = await this._pool.query(query);
 
     if (!result.rows.length) {
-      throw new NotFoundError('Like gagal dihapus. Id tidak ditemukan');
+      throw new NotFoundError('Like gagal dihapus.');
     }
 
-    await this._cacheService.delete(`album-likes:${albumId}`);
+    await this._cacheService.delete(`album-likes:${album_id}`);
   }
 
-  async verifyUserLiked(albumId, userId) {
+  async verifyLikingUser(album_id, user_id) {
     // verify album exist
     const albumQuery = {
       text: 'SELECT * FROM albums WHERE id = $1',
-      values: [albumId],
+      values: [album_id],
     };
     const albumResult = await this._pool.query(albumQuery);
 
@@ -163,7 +163,7 @@ class AlbumsService {
 
     const query = {
       text: 'SELECT * FROM user_album_likes WHERE album_id = $1 AND user_id = $2',
-      values: [albumId, userId],
+      values: [album_id, user_id],
     };
 
     const result = await this._pool.query(query);
