@@ -4,4 +4,4 @@ node_modules
 .prod.env
 package-lock.json
 open-music-api-webserver.pem
-src/api/uploads/file
+src/api/albums/file
